@@ -8,7 +8,7 @@
 		BIOME_LOW_HUMIDITY = /datum/biome/plains,
 		BIOME_LOWMEDIUM_HUMIDITY = /datum/biome/mudlands,
 		BIOME_HIGHMEDIUM_HUMIDITY = /datum/biome/mudlands,
-		BIOME_HIGH_HUMIDITY = /datum/biome/water
+		BIOME_HIGH_HUMIDITY = /datum/biome/water/swamp
 		),
 	BIOME_LOWMEDIUM_HEAT = list(
 		BIOME_LOW_HUMIDITY = /datum/biome/plains,
@@ -90,9 +90,17 @@
 	fullbright = 0
 
 	destroy_asteroid(var/dropOre=0)
+		var/image/weather = GetOverlayImage("weather")
+		var/image/ambient = GetOverlayImage("ambient")
+
 		src.RL_SetOpacity(0)
 		src.ReplaceWith(/turf/unsimulated/floor/setpieces/Azarak/cavefloor/floor3)
 		src.opacity = 0
 		src.levelupdate()
+
+		if(weather)
+			src.UpdateOverlays(weather, "weather")
+		if(ambient)
+			src.UpdateOverlays(ambient, "ambient")
 
 		return src

@@ -1,4 +1,4 @@
-#define HERB_SMOKE_TRANSFER_HARDCAP 15
+#define HERB_SMOKE_TRANSFER_HARDCAP 20
 #define HERB_HOTBOX_MULTIPLIER 1.2
 /// Inedible Produce
 /obj/item/plant/
@@ -13,26 +13,15 @@
 
 	New()
 		..()
-		unpooled()
+		make_reagents()
 
 	proc/make_reagents()
 		if (!src.reagents)
 			src.create_reagents(100)
 
-	unpooled()
-		src.reagents?.clear_reagents()
-		..()
-		make_reagents()
-		// hopefully prevent issues of "jumbo perfect large incredible nice perfect superb strawberry"
-		src.name = initial(name)
-
-	pooled()
-		..()
-		if (src.reagents)
-			src.reagents.clear_reagents()
-
 /obj/item/plant/herb
 	name = "herb base"
+	health = 4
 	burn_point = 330
 	burn_output = 800
 	burn_possible = 2
@@ -52,8 +41,8 @@
 			src.reagents.trans_to(P, src.reagents.total_volume)
 			W.force_drop(user)
 			src.force_drop(user)
-			pool (W)
-			pool (src)
+			qdel(W)
+			qdel(src)
 			user.put_in_hand_or_drop(P)
 			JOB_XP(user, "Botanist", 1)
 
@@ -71,11 +60,22 @@
 			W.force_drop(user)
 			src.force_drop(user)
 			qdel(W)
-			pool(src)
+			qdel(src)
 			user.put_in_hand_or_drop(doink)
 			JOB_XP(user, "Botanist", 2)
 
 	combust_ended()
+		// Prevent RP shuttle hotboxing
+		#ifdef RP_MODE
+		var/area/A = get_area(src)
+		if (A)
+			if (emergency_shuttle.location == SHUTTLE_LOC_STATION)
+				if (istype(A, /area/shuttle/escape/station))
+					return
+			else if (emergency_shuttle.location == SHUTTLE_LOC_TRANSIT)
+				if (istype(A, /area/shuttle/escape/transit))
+					return
+		#endif
 		var/turf/T = get_turf(src)
 		if (T.allow_unrestricted_hotbox) // traitor hotboxing
 			src.reagents.maximum_volume *= HERB_HOTBOX_MULTIPLIER
@@ -239,6 +239,10 @@
 	desc = "Fresh free-range spacegrass."
 	icon_state = "grass"
 
+	attack_hand(mob/user)
+		. = ..()
+		game_stats.Increment("grass_touched")
+
 /obj/item/plant/herb/contusine
 	name = "contusine leaves"
 	crop_suffix	= " leaves"
@@ -352,7 +356,7 @@
 	crop_suffix	= ""
 	desc = "A professor once asked, \"What is the difference, Mr. Potter, between monkshood and wolfsbane?\"\n  \"Aconite\", answered Hermione. And all was well."
 	icon_state = "aconite"
-	event_handler_flags = USE_HASENTERED | USE_FLUID_ENTER
+	event_handler_flags = USE_FLUID_ENTER
 	// module_research_type = /obj/item/plant/herb/cannabis
 	attack_hand(var/mob/user as mob)
 		if (iswerewolf(user))
@@ -362,7 +366,7 @@
 			return
 		else ..()
 	//stolen from glass shard
-	HasEntered(AM as mob|obj)
+	Crossed(atom/movable/AM as mob|obj)
 		var/mob/M = AM
 		if(iswerewolf(M))
 			M.changeStatus("weakened", 3 SECONDS)

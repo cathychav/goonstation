@@ -45,6 +45,9 @@
 
 #elif defined(MAP_OVERRIDE_MANTA)
 
+
+#elif defined(MAP_OVERRIDE_ARIN)
+
 #define UNDERWATER_MAP 1
 #define MOVING_SUB_MAP 1
 #define SUBMARINE_MAP 1

@@ -15,9 +15,13 @@
 			return 1
 
 		if (isobj(target) && (target.is_open_container() || istype(target,/obj/item/reagent_containers/food) || istype(target,/obj/item/reagent_containers/patch)))
-			if (get_dist(holder.owner, target) > 1)
+			if (BOUNDS_DIST(holder.owner, target) > 0)
 				boutput(holder.owner, __red("We cannot reach that target with our stinger."))
 				return 1
+			if (!target.reagents)
+				boutput(holder.owner, "<span class='notice'>We cannot seem to sting [target].</span>")
+				return 1
+
 			if (target.reagents.total_volume >= target.reagents.maximum_volume)
 				boutput(holder.owner, "<span class='alert'>[target] is full.</span>")
 				return 1
@@ -42,7 +46,7 @@
 				return 1
 		if (target == holder.owner)
 			return 1
-		if (get_dist(holder.owner, target) > 1)
+		if (BOUNDS_DIST(holder.owner, target) > 0)
 			boutput(holder.owner, __red("We cannot reach that target with our stinger."))
 			return 1
 		var/mob/MT = target

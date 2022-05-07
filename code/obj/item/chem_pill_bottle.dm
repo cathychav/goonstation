@@ -52,7 +52,7 @@
 				if (src.reagents_internal.total_volume < src.pvol)
 					src.pcount = 0
 				else
-					P = unpool(/obj/item/reagent_containers/pill)
+					P = new /obj/item/reagent_containers/pill
 					P.set_loc(src)
 					P.name = "[pname] pill"
 
@@ -83,7 +83,7 @@
 		if (istype(W, /obj/item/reagent_containers/pill))
 			user.u_equip(W)
 			W.set_loc(src)
-			W.dropped()
+			W.dropped(user)
 			boutput(user, "<span class='notice'>You put [W] in [src].</span>")
 			rebuild_desc()
 		else ..()
@@ -136,7 +136,7 @@
 			if (P in user)
 				continue
 			P.set_loc(src)
-			P.dropped()
+			P.dropped(user)
 			src.rebuild_desc()
 			sleep(0.2 SECONDS)
 			if (user.loc != staystill)
