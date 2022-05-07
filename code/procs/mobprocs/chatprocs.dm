@@ -8,24 +8,57 @@
 	set name = "whisper"
 	return src.whisper(message)
 
+/mob/verb/start_typing()
+	set name = ".starttyping"
+	set hidden = TRUE
+
+	var/mob/living/M = src
+	if(!istype(M) || !isalive(M) || isAIeye(M))
+		return
+
+	M.speech_bubble.icon_state = "typing"
+	UpdateOverlays(M.speech_bubble, "speech_bubble")
+	var/start_time = TIME
+	M.last_typing = start_time
+
+	SPAWN(15 SECONDS)
+		if(M.last_typing == start_time && src.GetOverlayImage("speech_bubble")?.icon_state == "typing")
+			src.UpdateOverlays(null, "speech_bubble")
+
 /mob/verb/say_verb(message as text)
 	set name = "say"
-	//&& !src.client.holder
-
 	if (!message)
+		if(src.GetOverlayImage("speech_bubble")?.icon_state == "typing")
+			src.UpdateOverlays(null, "speech_bubble")
 		return
 	if (src.client && url_regex?.Find(message) && !client.holder)
 		boutput(src, "<span class='notice'><b>Web/BYOND links are not allowed in ingame chat.</b></span>")
 		boutput(src, "<span class='alert'>&emsp;<b>\"[message]</b>\"</span>")
 		return
 	src.say(message)
+	if(src.GetOverlayImage("speech_bubble")?.icon_state == "typing")
+		src.UpdateOverlays(null, "speech_bubble")
 	if (!dd_hasprefix(message, "*")) // if this is an emote it is logged in emote
 		logTheThing("say", src, null, "SAY: [html_encode(message)] [log_loc(src)]")
-		//logit("say", 0, src, " said ", message)
 
 /mob/verb/say_radio()
 	set name = "say_radio"
 	set hidden = 1
+
+/mob/verb/say_main_radio(msg as text)
+	set name = "say_main_radio"
+	set hidden = 1
+
+/mob/living/say_main_radio(msg as text)
+	set name = "say_main_radio"
+	set desc = "Speaking on the main radio frequency"
+	set hidden = 1
+	if (src.capitalize_speech())
+		var/i = 1
+		while (copytext(msg, i, i+1) == " ")
+			i++
+		msg = capitalize(copytext(msg, i))
+	src.say_verb(";" + msg)
 
 /mob/living/say_radio()
 	set name = "say_radio"
@@ -72,8 +105,7 @@
 			boutput(src, "Somehow '[choice]' didn't match anything. Welp. Probably busted.")
 		var/text = input("", "Speaking over [choice] ([token])") as null|text
 		if (text)
-
-			if(src?.client?.preferences.auto_capitalization)
+			if (src.capitalize_speech())
 				text = capitalize(text)
 
 			src.say_verb(token + " " + text)
@@ -109,7 +141,7 @@
 			token = ":" + R.secure_frequencies[choice_index - 1]
 
 		var/text = input("", "Speaking to [choice] frequency") as null|text
-		if (client.preferences.auto_capitalization)
+		if (src.capitalize_speech())
 			var/i = 1
 			while (copytext(text, i, i+1) == " ")
 				i++
@@ -263,12 +295,17 @@
 	var/rendered = "<span class='game hivesay'><span class='prefix'>HIVEMIND:</span> <span class='name' data-ctx='\ref[src.mind]'>[name]<span class='text-normal'>[alt_name]</span></span> <span class='message'>[message]</span></span>"
 
 	//show to hivemind
+	var/list/mob/hivemind = hivemind_owner.get_current_hivemind()
 	for (var/client/C in clients)
+		if (C.mob in hivemind)
+			continue
 		try_render_chat_to_admin(C, rendered)
-	for (var/mob/M in (hivemind_owner.hivemind + hivemind_owner.owner))
-		if (M.client?.holder && M.client.deadchat && !M.client.player_mode) continue
-		if (isdead(M) || istype(M,/mob/living/critter/changeling) || (M == hivemind_owner.owner))
-			boutput(M, rendered)
+	if (isabomination(hivemind_owner.owner))
+		var/abomination_rendered = "<span class='game'><span class='prefix'></span> <span class='name' data-ctx='\ref[src.mind]'>Congealed [name]</span> <span class='message'>[message]</span></span>"
+		src.audible_message(abomination_rendered)
+	else
+		for (var/mob/member in hivemind)
+			boutput(member, rendered)
 
 //vampire thrall say
 /mob/proc/say_thrall(var/message, var/datum/abilityHolder/vampire/owner)
@@ -282,10 +319,8 @@
 		return
 
 	if (isvampire(src))
-		name = src.real_name
 		alt_name = " (VAMPIRE)"
 	else if (isvampiricthrall(src))
-		name = src.real_name
 		alt_name = " (THRALL)"
 
 #ifdef DATALOGGER
@@ -295,7 +330,7 @@
 	message = src.say_quote(message)
 	//logTheThing("say", src, null, "SAY: [message]")
 
-	var/rendered = "<span class='game ghoulsay'><span class='prefix'>GHOULSPEAK:</span> <span class='name' data-ctx='\ref[src.mind]'>[name]<span class='text-normal'>[alt_name]</span></span> <span class='message'>[message]</span></span>"
+	var/rendered = "<span class='game thrallsay'><span class='prefix'>Thrall speak:</span> <span class='name [isvampire(src) ? "vamp" : ""]' data-ctx='\ref[src.mind]'>[name]<span class='text-normal'>[alt_name]</span></span> <span class='message'>[message]</span></span>"
 
 	//show to ghouls
 	for (var/client/C in clients)
@@ -323,7 +358,7 @@
 	message = src.say_quote(message)
 	//logTheThing("say", src, null, "SAY: [message]")
 
-	var/rendered = "<span class='game kudzusay'><span class='prefix'><small>KUDZUSPEAK:</small></span> <span class='name' data-ctx='\ref[src.mind]'>[name]<span class='text-normal'>[alt_name]</span></span> <span class='message'>[message]</span></span>"
+	var/rendered = "<span class='game kudzusay'><span class='prefix'><small>Kudzu speak:</small></span> <span class='name' data-ctx='\ref[src.mind]'>[name]<span class='text-normal'>[alt_name]</span></span> <span class='message'>[message]</span></span>"
 
 
 	//show message to admins (Follow rules of their deadchat toggle)
@@ -483,14 +518,14 @@
 		if (dead_check && isdead(src))
 			src.emote_allowed = 0
 			return 0
-		if (voluntary && src.getStatusDuration("paralysis") > 0)
+		if (voluntary && (src.getStatusDuration("paralysis") > 0 || isunconscious(src)))
 			return 0
 		if (world.time >= (src.last_emote_time + src.last_emote_wait))
-			if (!(src.client && (src.client.holder && admin_bypass) && !src.client.player_mode) && voluntary)
+			if (!no_emote_cooldowns && !(src.client && (src.client.holder && admin_bypass) && !src.client.player_mode) && voluntary)
 				src.emote_allowed = 0
 				src.last_emote_time = world.time
 				src.last_emote_wait = time
-				SPAWN_DBG(time)
+				SPAWN(time)
 					src.emote_allowed = 1
 			return 1
 		else
@@ -539,6 +574,7 @@
 		return
 
 	logTheThing("diary", src, null, ": [msg]", "ooc")
+	phrase_log.log_phrase("ooc", msg)
 
 #ifdef DATALOGGER
 	game_stats.ScanText(msg)
@@ -648,6 +684,24 @@
 		if (M.client.holder && !M.client.only_local_looc && !M.client.player_mode)
 			recipients += M.client
 
+	var looc_style = ""
+	if (src.client.holder && !src.client.stealth)
+		if (src.client.holder.level == LEVEL_BABBY)
+			looc_style = "color: #4cb7db;"
+		else
+			looc_style = "color: #cd6c4c;"
+	else if (src.client.is_mentor() && !src.client.stealth)
+		looc_style = "color: #a24cff;"
+
+	var/image/chat_maptext/looc_text = null
+	looc_text = make_chat_maptext(src, "\[LOOC: [msg]]", looc_style)
+	if(looc_text)
+		looc_text.measure(src.client)
+		for(var/image/chat_maptext/I in src.chat_text.lines)
+			if(I != looc_text)
+				I.bump_up(looc_text.measured_height)
+
+	phrase_log.log_phrase("looc", msg)
 	for (var/client/C in recipients)
 		// DEBUGGING
 		if (!C.preferences)
@@ -679,6 +733,9 @@
 			rendered = "<span class='adminHearing' data-ctx='[C.chatOutput.getContextFlags()]'>[rendered]</span>"
 
 		boutput(C, rendered)
+		var/mob/M = C.mob
+		if(speechpopups && M.chat_text && !C.preferences?.flying_chat_hidden)
+			looc_text.show_to(C)
 
 	logTheThing("ooc", src, null, "LOOC: [msg]")
 
@@ -716,6 +773,8 @@
 	var/modifier = 30
 	if (src.reagents && src.reagents.has_reagent("helium"))
 		modifier += 30
+	if (src.getStatusDuration("crunched") > 0)
+		modifier += 100
 	if (deep_farting)
 		modifier -= 120
 	if (modifier == 0)

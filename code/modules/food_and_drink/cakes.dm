@@ -11,7 +11,7 @@
 	icon = 'icons/obj/foodNdrink/food_dessert.dmi'
 	icon_state = "cake_batter"
 	inhand_image_icon = 'icons/mob/inhand/hand_food.dmi'
-	amount = 12
+	bites_left = 12
 	heal_amt = 1
 	var/obj/item/reagent_containers/custom_item
 	initial_volume = 50
@@ -22,7 +22,7 @@
 	icon = 'icons/obj/foodNdrink/food_dessert.dmi'
 	icon_state = "yellowcake"
 	w_class = W_CLASS_TINY
-	amount = 1
+	bites_left = 1
 	heal_amt = 2
 	initial_volume = 5
 	initial_reagents = "uranium"
@@ -33,13 +33,14 @@
 	icon = 'icons/obj/foodNdrink/food_dessert.dmi'
 	icon_state = "cake1-base_custom"
 	inhand_image_icon = 'icons/mob/inhand/hand_food.dmi'
-	amount = 0
+	bites_left = 0
 	heal_amt = 2
-	use_bite_mask = 0
+	use_bite_mask = FALSE
 	flags = FPRINT | TABLEPASS | NOSPLASH
 	initial_volume = 100
 	w_class = W_CLASS_BULKY
 	var/list/cake_bases //stores the name of the base types of each layer of cake i.e. ("custom","gateau","meat")
+	var/list/cake_types = list()
 	var/sliced = FALSE
 	var/static/list/frostingstyles = list("classic","top swirls","bottom swirls","spirals","rose spirals")
 	var/clayer = 1
@@ -79,6 +80,12 @@
 					tag = "cake[clayer]-lime"
 				if(/obj/item/reagent_containers/food/snacks/plant/strawberry)
 					tag = "cake[clayer]-strawberry"
+				if(/obj/item/reagent_containers/food/snacks/plant/blackberry)
+					tag = "cake[clayer]-blackberry"
+				if(/obj/item/reagent_containers/food/snacks/plant/raspberry)
+					tag = "cake[clayer]-raspberry"
+				if(/obj/item/reagent_containers/food/snacks/plant/blueraspberry)
+					tag = "cake[clayer]-braspberry"
 
 		if(tag && src.GetOverlayImage(tag)) //if there's a duplicate non-generic overlay, return a list of empty data
 			return list(0,0)
@@ -111,7 +118,7 @@
 			return
 		var/frostingtype
 		frostingtype = input("Which frosting style would you like?", "Frosting Style", null) as null|anything in frostingstyles
-		if(frostingtype && (get_dist(src, user) <= 1))
+		if(frostingtype && (BOUNDS_DIST(src, user) == 0))
 			var/tag
 			var/datum/color/average = tube.reagents.get_average_color()
 			switch(frostingtype)
@@ -207,7 +214,7 @@
 			schild.desc = "a delicious slice of cake!"
 			schild.food_color = src.food_color
 			schild.sliced = TRUE
-			schild.amount = 1
+			schild.bites_left = 1
 
 			schild.set_loc(get_turf(src.loc))
 		qdel(s) //cleaning up the template slice
@@ -285,6 +292,14 @@
 		if(c.litfam)
 			src.ignite()
 		src.update_cake_context()
+
+		//Complete cake crew objectives if possible
+		src.cake_types += c.cake_types
+		if (user.mind && user.mind.objectives)
+			for (var/datum/objective/crew/chef/cake/objective in user.mind.objectives)
+				var/list/matching_types = src.cake_types & objective.choices
+				if(length(matching_types) >= CAKE_OBJ_COUNT)
+					objective.completed = TRUE
 		qdel(c)
 
 
@@ -383,7 +398,7 @@
 		if (!src)
 			return
 		if (!src.litfam)
-			src.firesource = TRUE
+			src.firesource = FIRESOURCE_OPEN_FLAME
 			src.litfam = TRUE
 			src.hit_type = DAMAGE_BURN
 			src.force = 3
@@ -531,7 +546,7 @@
 	desc = "A little birthday cupcake for a bee. May not taste good to non-bees. This doesn't seem to be homemade; maybe that's why it looks so generic."
 	icon = 'icons/obj/foodNdrink/food_dessert.dmi'
 	icon_state = "b_cupcake"
-	amount = 4
+	bites_left = 4
 	heal_amt = 1
 	doants = 0
 
@@ -626,8 +641,9 @@
 /obj/item/reagent_containers/food/snacks/fruit_cake
 	name = "fruitcake"
 	desc = "The most disgusting dessert ever devised. Legend says there's only one of these in the galaxy, passed from location to location by vengeful deities."
+	icon = 'icons/obj/foodNdrink/food_dessert.dmi'
 	icon_state = "cake_fruit"
-	amount = 12
+	bites_left = 12
 	heal_amt = 3
 	initial_volume = 50
 	initial_reagents = "yuck"

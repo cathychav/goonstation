@@ -17,16 +17,6 @@
 			src.setMaterial(M)
 		setup_material()
 
-	unpooled()
-		..()
-		if (istext(default_material))
-			var/datum/material/M = getMaterial(default_material)
-			src.setMaterial(M)
-		setup_material()
-
-	pooled()
-		..()
-
 	proc/setup_material()
 		.=0
 
@@ -53,7 +43,7 @@
 
 	split_stack(var/toRemove)
 		if(toRemove >= amount || toRemove < 1) return 0
-		var/obj/item/material_piece/P = unpool(src.type)
+		var/obj/item/material_piece/P = new src.type
 		P.set_loc(src.loc)
 		P.setMaterial(copyMaterial(src.material))
 		src.change_stack_amount(-toRemove)
@@ -63,7 +53,7 @@
 	attack_hand(mob/user as mob)
 		if(user.is_in_hands(src) && src.amount > 1)
 			var/splitnum = round(input("How many material pieces do you want to take from the stack?","Stack of [src.amount]",1) as num)
-			if (splitnum >= amount || splitnum < 1)
+			if (!isnum_safe(splitnum) || splitnum >= amount || splitnum < 1)
 				boutput(user, "<span class='alert'>Invalid entry, try again.</span>")
 				return
 			var/obj/item/material_piece/new_stack = split_stack(splitnum)
@@ -79,16 +69,19 @@
 				user.put_in_hand(src)
 			boutput(user, "<span class='notice'>You add the material to the stack. It now has [src.amount] pieces.</span>")
 
-	MouseDrop(over_object, src_location, over_location) //src dragged onto over_object
+	mouse_drop(over_object, src_location, over_location) //src dragged onto over_object
 		if (isobserver(usr))
 			boutput(usr, "<span class='alert'>Quit that! You're dead!</span>")
 			return
+		if(isintangible(usr))
+			boutput(usr,"<span class='alert'>You need hands to do that. Do you have hands? No? Then stop it.</span>")
+			return
 
 		if(!istype(over_object, /atom/movable/screen/hud))
-			if (get_dist(usr,src) > 1)
+			if (BOUNDS_DIST(usr, src) > 0)
 				boutput(usr, "<span class='alert'>You're too far away from it to do that.</span>")
 				return
-			if (get_dist(usr,over_object) > 1)
+			if (BOUNDS_DIST(usr, over_object) > 0)
 				boutput(usr, "<span class='alert'>You're too far away from it to do that.</span>")
 				return
 
@@ -158,6 +151,13 @@
 		icon_state = "wad"
 		name = "clump"
 		desc = "A clump of some kind of material."
+
+		blob
+			name = "chunk of blob"
+
+			setup_material()
+				src.setMaterial(getMaterial("blob"), setname = 0)
+				..()
 
 	sphere
 		// energy
@@ -356,20 +356,20 @@
 		src.setMaterial(getMaterial("cotton"), appearance = 0, setname = 0)
 		..()
 
-/obj/item/material_piece/cloth/wendigohide
-	name = "wendigo hide"
-	desc = "The hide of a wendigo."
-	icon_state = "wendigohide-fabric"
+/obj/item/material_piece/cloth/brullbarhide
+	name = "brullbar hide"
+	desc = "The hide of a brullbar."
+	icon_state = "brullbarhide-fabric"
 	setup_material()
-		src.setMaterial(getMaterial("wendigohide"), appearance = 0, setname = 0)
+		src.setMaterial(getMaterial("brullbarhide"), appearance = 0, setname = 0)
 		..()
 
-/obj/item/material_piece/cloth/kingwendigohide
-	name = "king wendigo hide"
-	desc = "The hide of a king wendigo."
-	icon_state = "wendigohide-fabric"
+/obj/item/material_piece/cloth/kingbrullbarhide
+	name = "king brullbar hide"
+	desc = "The hide of a king brullbar."
+	icon_state = "brullbarhide-fabric"
 	setup_material()
-		src.setMaterial(getMaterial("kingwendigohide"), appearance = 0, setname = 0)
+		src.setMaterial(getMaterial("kingbrullbarhide"), appearance = 0, setname = 0)
 		..()
 
 /obj/item/material_piece/cloth/carbon

@@ -7,7 +7,7 @@
 	name = "shoes"
 	icon = 'icons/obj/clothing/item_shoes.dmi'
 	inhand_image_icon = 'icons/mob/inhand/hand_feethand.dmi'
-	wear_image_icon = 'icons/mob/feet.dmi'
+	wear_image_icon = 'icons/mob/clothing/feet.dmi'
 	var/chained = 0
 	var/laces = LACES_NORMAL // Laces for /obj/item/gun/energy/pickpocket harass mode.
 	var/kick_bonus = 0 //some shoes will yield extra kick damage!
@@ -342,6 +342,7 @@
 /obj/item/clothing/shoes/cowboy
 	name = "Cowboy boots"
 	icon_state = "cowboy"
+	compatible_species = list("human", "cow")
 
 /obj/item/clothing/shoes/cowboy/boom
 	name = "Boom Boots"
@@ -367,12 +368,7 @@
 	laces = LACES_NONE
 	step_sound = "step_flipflop"
 	step_priority = STEP_PRIORITY_LOW
-
-	handle_other_remove(var/mob/source, var/mob/living/carbon/human/target)
-		. = ..()
-		if (prob(75))
-			source.show_message(text("<span class='alert'>\The [src] writhes in your hands as though they are alive! They just barely wriggle out of your grip!</span>"), 1)
-			. = 0
+	duration_remove = 10 SECONDS
 
 /obj/item/clothing/shoes/tourist
 	name = "flip-flops"
@@ -446,7 +442,7 @@
 
 /obj/item/clothing/shoes/swat/knight // so heavy you can't get shoved!
 	name = "combat sabatons"
-	desc = "Massive, armored footwear for syndicate super-heavies."
+	desc = "Massive, magnetic, slip-resistant armored footwear for syndicate super-heavies."
 	icon_state = "swatheavy"
 	magnetic = 1
 	c_flags = NOSLIP
@@ -609,7 +605,7 @@
 				setProperty("coldprot", 0)
 				setProperty("heatprot", 0)
 			if(src.material.hasProperty("hard") && src.material.hasProperty("density"))
-				kick_bonus = round((src.material.getProperty("hard") * src.material.getProperty("density")) / 2500)
+				kick_bonus = round((src.material.getProperty("hard") * src.material.getProperty("density")) / 1500)
 			else
 				kick_bonus = 0
 		return
@@ -682,3 +678,56 @@
 	icon_state = "mjwhite"
 	desc = "Dainty and formal. This pair is white."
 	step_sound = "footstep"
+
+/obj/item/clothing/shoes/slasher_shoes
+	name = "Industrial Boots"
+	icon_state = "boots"
+	desc = "Bulky boots with thick soles, protecting your feet."
+	step_sound = "step_plating"
+
+	noslip
+		magnetic = 1
+		c_flags = NOSLIP
+		cant_self_remove = 1
+		cant_other_remove = 1
+		step_sound = "step_lattice"
+
+		setupProperties()
+			..()
+			setProperty("coldprot", 5)
+			setProperty("heatprot", 5)
+			setProperty("exploprot", 15)
+
+/obj/item/clothing/shoes/witchboots
+	name = "Witch Boots"
+	icon_state = "witchboots"
+	desc = "The curved front of these boots is reminiscent of a crescent moon, how magical."
+	step_sound = "footstep"
+
+//Western Boots
+
+/obj/item/clothing/shoes/westboot
+	name = "Real Cowboy Boots"
+	icon_state = "westboot"
+	desc = "Perfect for riding horses, if only you had one!"
+	compatible_species = list("human", "cow")
+
+/obj/item/clothing/shoes/westboot/black
+	name = "Black Cowboy Boots"
+	icon_state = "westboot_black"
+
+/obj/item/clothing/shoes/westboot/dirty
+	name = "Dirty Cowboy Boots"
+	icon_state = "westboot_dirty"
+
+/obj/item/clothing/shoes/westboot/brown
+	name = "Brown Cowboy Boots"
+	icon_state = "westboot_brown"
+
+/obj/item/clothing/shoes/westboot/brown/rancher
+	name = "Rancher Boots"
+	var/vault_speed_bonus = 1
+
+	setupProperties()
+		..()
+		setProperty("vault_speed", vault_speed_bonus)

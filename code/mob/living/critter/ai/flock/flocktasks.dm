@@ -55,8 +55,8 @@
 		// let's not spam eggs all the time
 		if(isnull(locate(/obj/flock_structure/egg) in F))
 			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(holder.owner), F, 0, 40))
-				. += F
+			. += F
+	. = get_path_to(holder.owner, ., 40, 0)
 
 ////////
 
@@ -121,7 +121,7 @@
 	if(F?.flock)
 		// if we can go for a tile we already have reserved, go for it
 		var/turf/simulated/reserved = F.flock.busy_tiles[F.real_name]
-		if(istype(reserved) && !isfeathertile(reserved) && cirrAstar(get_turf(holder.owner), reserved, 1, 20))
+		if(istype(reserved) && !isfeathertile(reserved) && get_path_to(holder.owner, reserved, 20, 1))
 			. += reserved
 			return
 		// if there's a priority tile we can go for, do it
@@ -129,8 +129,7 @@
 		if(length(priority_turfs))
 			for(var/turf/simulated/PT in priority_turfs)
 				// if we can get a valid path to the target, include it for consideration
-				if(cirrAstar(get_turf(holder.owner), PT, 1, 80))
-					. += PT
+				. += PT
 
 	// else just go for one nearby
 	for(var/turf/simulated/T in view(max_dist, holder.owner))
@@ -139,8 +138,8 @@
 			if(F?.flock && !F.flock.isTurfFree(T, F.real_name))
 				continue // this tile's been claimed by someone else
 			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(holder.owner), T, 1, 40))
-				. += T
+			. += T
+	. = get_path_to(holder.owner, ., 60, 1)
 
 ////////
 
@@ -150,7 +149,7 @@
 
 /datum/aiTask/succeedable/build/failed()
 	var/turf/simulated/floor/build_target = holder.target
-	if(!build_target || get_dist(holder.owner, build_target) > 1)
+	if(!build_target || BOUNDS_DIST(holder.owner, build_target) > 0)
 		return 1
 	var/mob/living/critter/flock/F = holder.owner
 	if(!F)
@@ -199,7 +198,7 @@
 	var/mob/living/critter/flock/drone/F = holder.owner
 	if(F)
 		F.active_hand = 2 // nanite spray
-		F.a_intent = INTENT_HELP
+		F.set_a_intent(INTENT_HELP)
 		F.hud?.update_intent()
 		F.hud?.update_hands() // for observers
 
@@ -210,8 +209,8 @@
 			continue
 		if(F.get_health_percentage() < 0.66 && !isdead(F))//yeesh dont try to repair something which is dead
 			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(holder.owner), get_turf(F), 1, 40))
-				. += F
+			. += F
+	. = get_path_to(holder.owner, ., 40, 1)
 
 ////////
 
@@ -222,7 +221,7 @@
 /datum/aiTask/succeedable/repair/failed()
 	var/mob/living/critter/flock/drone/F = holder.owner
 	var/mob/living/critter/flock/drone/T = holder.target
-	if(!F || !T || get_dist(T, F) > 1)
+	if(!F || !T || BOUNDS_DIST(T, F) > 0)
 		return 1
 	if(F && (!F.can_afford() || !F.abilityHolder))
 		return 1
@@ -234,7 +233,7 @@
 	if(!has_started)
 		var/mob/living/critter/flock/drone/F = holder.owner
 		var/mob/living/critter/flock/drone/T = holder.target
-		if(F && T && get_dist(holder.owner, holder.target) <= 1)
+		if(F && T && BOUNDS_DIST(holder.owner, holder.target) == 0)
 			if(F.set_hand(2)) // nanite spray
 				holder.owner.set_dir(get_dir(holder.owner, holder.target))
 				F.hand_attack(T)
@@ -265,7 +264,7 @@
 	var/mob/living/critter/flock/drone/F = holder.owner
 	if(F)
 		F.active_hand = 2 // nanite spray
-		F.a_intent = INTENT_HELP
+		F.set_a_intent(INTENT_HELP)
 		F.hud?.update_intent()
 		F.hud?.update_hands() // for observers
 
@@ -275,8 +274,8 @@
 	for(var/obj/flock_structure/ghost/S in view(max_dist, F))
 		if(S.flock == F.flock && S.goal > S.currentmats)
 			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(F), get_turf(S), 1, 40))
-				. += S
+			. += S
+	. = get_path_to(holder.owner, ., 40, 1)
 
 ////////
 
@@ -287,7 +286,7 @@
 /datum/aiTask/succeedable/deposit/failed()
 	var/mob/living/critter/flock/drone/F = holder.owner
 	var/obj/flock_structure/ghost/T = holder.target
-	if(!F || !T || get_dist(T, F) > 1)
+	if(!F || !T || BOUNDS_DIST(T, F) > 0)
 		return 1
 	if(F && (!F.can_afford() || !F.abilityHolder))
 		return 1
@@ -299,7 +298,7 @@
 	if(!has_started)
 		var/mob/living/critter/flock/drone/F = holder.owner
 		var/obj/flock_structure/ghost/T = holder.target
-		if(F && T && get_dist(holder.owner, holder.target) <= 1)
+		if(F && T && BOUNDS_DIST(holder.owner, holder.target) == 0)
 			if(F.set_hand(2)) // nanite spray
 				holder.owner.set_dir(get_dir(holder.owner, holder.target))
 				F.hand_attack(T)
@@ -331,8 +330,8 @@
 	for(var/obj/storage/S in view(max_dist, holder.owner))
 		if(!S.open && !S.welded && !S.locked)
 			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(holder.owner), get_turf(S), 1, 10))
-				. += S
+			. += S
+	. = get_path_to(holder.owner, ., 10, 1)
 
 ////////
 
@@ -342,7 +341,7 @@
 
 /datum/aiTask/succeedable/open_container/failed()
 	var/obj/storage/container_target = holder.target
-	if(!container_target || get_dist(holder.owner, container_target) > 1 || fails >= max_fails)
+	if(!container_target || BOUNDS_DIST(holder.owner, container_target) > 0 || fails >= max_fails)
 		. = 1
 
 /datum/aiTask/succeedable/open_container/succeeded()
@@ -354,7 +353,7 @@
 
 /datum/aiTask/succeedable/open_container/on_tick()
 	var/obj/storage/container_target = holder.target
-	if(container_target && get_dist(holder.owner, container_target) <= 1 && !succeeded())
+	if(container_target && BOUNDS_DIST(holder.owner, container_target) == 0 && !succeeded())
 		var/mob/living/critter/flock/drone/F = holder.owner
 		if(F?.set_hand(1)) // grip tool
 			F.set_dir(get_dir(F, container_target))
@@ -387,8 +386,8 @@
 	for(var/obj/item/storage/I in view(max_dist, holder.owner))
 		if(length(I.contents) && I.loc != holder.owner && I.does_not_open_in_pocket)
 			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(holder.owner), get_turf(I), 1, 10))
-				. += I
+			. += I
+	. = get_path_to(holder.owner, ., 10, 1)
 
 ////////
 
@@ -399,7 +398,7 @@
 
 /datum/aiTask/succeedable/rummage/failed()
 	var/obj/item/storage/container_target = holder.target
-	if(!container_target || get_dist(holder.owner, container_target) > 1 || fails >= max_fails)
+	if(!container_target || BOUNDS_DIST(holder.owner, container_target) > 0 || fails >= max_fails)
 		. = 1
 
 /datum/aiTask/succeedable/rummage/succeeded()
@@ -411,7 +410,7 @@
 
 /datum/aiTask/succeedable/rummage/on_tick()
 	var/obj/item/storage/container_target = holder.target
-	if(container_target && get_dist(holder.owner, container_target) <= 1 && !succeeded())
+	if(container_target && BOUNDS_DIST(holder.owner, container_target) == 0 && !succeeded())
 		var/mob/living/critter/flock/drone/F = holder.owner
 		usr = F // don't ask, please, don't
 		if(F?.set_hand(1)) // grip tool
@@ -486,8 +485,8 @@
 				if(P.amount <= 0)
 					continue // do not try to fetch paper out of an empty paper bin forever
 			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(holder.owner), get_turf(I), 1, 40))
-				. += I
+			. += I
+	. = get_path_to(holder.owner, ., 40, 1)
 
 ////////
 
@@ -497,7 +496,7 @@
 
 /datum/aiTask/succeedable/harvest/failed()
 	var/obj/item/harvest_target = holder.target
-	if(!harvest_target || get_dist(holder.owner, harvest_target) > 1 || fails >= max_fails)
+	if(!harvest_target || BOUNDS_DIST(holder.owner, harvest_target) > 0 || fails >= max_fails)
 		. = 1
 
 /datum/aiTask/succeedable/harvest/succeeded()
@@ -505,7 +504,7 @@
 
 /datum/aiTask/succeedable/harvest/on_tick()
 	var/obj/item/harvest_target = holder.target
-	if(harvest_target && get_dist(holder.owner, harvest_target) <= 1 && !succeeded())
+	if(harvest_target && BOUNDS_DIST(holder.owner, harvest_target) == 0 && !succeeded())
 		var/mob/living/critter/flock/drone/F = holder.owner
 		if(F?.set_hand(1)) // grip tool
 			var/obj/item/already_held = F.get_active_hand().item
@@ -629,7 +628,7 @@
 		else if(!actions.hasAction(owncritter, "flock_entomb")) // let's not keep interrupting our own action
 			if(owncritter.active_hand != 2) // nanite spray
 				owncritter.set_hand(2)
-				owncritter.a_intent = INTENT_DISARM
+				owncritter.set_a_intent(INTENT_DISARM)
 				owncritter.hud.update_intent()
 			owncritter.set_dir(get_dir(owncritter, holder.target))
 			owncritter.hand_attack(holder.target)
@@ -643,9 +642,8 @@
 				// mob is a valid target, check if they're not already in a cage
 				if(!istype(M.loc.type, /obj/icecube/flockdrone))
 					// if we can get a valid path to the target, include it for consideration
-					if(cirrAstar(get_turf(holder.owner), get_turf(M), 1, 40))
-						// GO AND IMPRISON THEM
-						. += M
+					. += M
+	. = get_path_to(holder.owner, ., 40, 1)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -665,7 +663,7 @@
 	var/mob/living/critter/flock/drone/F = holder.owner
 	if(F)
 		F.active_hand = 2 // nanite spray
-		F.a_intent = INTENT_HARM
+		F.set_a_intent(INTENT_HARM)
 		F.hud?.update_intent()
 		F.hud?.update_hands() // for observers
 
@@ -675,9 +673,8 @@
 		if(F == holder.owner)
 			continue
 		if(isdead(F))
-			// if we can get a valid path to the target, include it for consideration
-			if(cirrAstar(get_turf(holder.owner), get_turf(F), 1, 40))
-				. += F
+			. += F
+	. = get_path_to(holder.owner, ., 40, 1)
 
 ////////
 
@@ -688,7 +685,7 @@
 /datum/aiTask/succeedable/butcher/failed()
 	var/mob/living/critter/flock/drone/F = holder.owner
 	var/mob/living/critter/flock/drone/T = holder.target
-	if(!F || !T || get_dist(T, F) > 1)
+	if(!F || !T || BOUNDS_DIST(T, F) > 0)
 		return 1
 	if(F && !F.abilityHolder)
 		return 1
@@ -700,7 +697,7 @@
 	if(!has_started)
 		var/mob/living/critter/flock/drone/F = holder.owner
 		var/mob/living/critter/flock/drone/T = holder.target
-		if(F && T && get_dist(holder.owner, holder.target) <= 1)
+		if(F && T && BOUNDS_DIST(holder.owner, holder.target) == 0)
 			if(F.set_hand(2)) // nanite spray
 				holder.owner.set_dir(get_dir(holder.owner, holder.target))
 				F.hand_attack(T)
