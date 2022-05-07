@@ -23,7 +23,7 @@
 				return 1
 		if (target == holder.owner)
 			return 1
-		if (get_dist(holder.owner, target) > 1)
+		if (BOUNDS_DIST(holder.owner, target) > 0)
 			boutput(holder.owner, __red("That is too far away to bite."))
 			return 1
 		var/mob/MT = target
@@ -32,6 +32,7 @@
 		MT.changeStatus("stunned", 2 SECONDS)
 		holder.owner.visible_message("<span class='combat'><b>[holder.owner] bites [MT]!</b></span>",\
 		"<span class='combat'><b>You bite [MT]!</b></span>")
+		logTheThing("combat", S, null, "used their [src.name] ability on [MT] at [log_loc(S)]")
 		if (istype(S))
 			S.venom_bite(MT)
 		else // no venom, very sad
@@ -53,6 +54,7 @@
 	name = "Flail"
 	desc = "Flail at a mob, stunning them and injecting them with your venom. (You do have venom, don't you?)"
 	cooldown = 300
+	icon_state = "spider_flail"
 	targeted = 1
 	target_anything = 1
 
@@ -77,7 +79,7 @@
 				return 1
 		if (target == holder.owner)
 			return 1
-		if (get_dist(holder.owner, target) > 1)
+		if (BOUNDS_DIST(holder.owner, target) > 0)
 			boutput(holder.owner, __red("That is too far away to flail at."))
 			return 1
 		var/mob/MT = target
@@ -85,18 +87,21 @@
 		holder.owner.visible_message("<span class='combat'><b>[holder.owner] dives on [MT]!</b></span>",\
 		"<span class='combat'><b>You dive on [MT]!</b></span>")
 		playsound(holder.owner, "sound/impact_sounds/Generic_Shove_1.ogg", 50, 0, pitch = 1.6)
+		logTheThing("combat", S, null, "used their [src.name] ability on [MT] at [log_loc(S)]")
 		MT.TakeDamageAccountArmor("All", rand(4,10), 0, 0, DAMAGE_STAB)
+		if (MT.loc && holder.owner.loc != MT.loc)
+			holder.owner.set_loc(MT.loc)
 		if (!isdead(MT))
 			MT.emote("scream")
 		disabled = 1
-		SPAWN_DBG(0)
+		SPAWN(0)
 			var/flail = rand(10, 15)
-			holder.owner.canmove = 0
+			holder.owner.canmove = 1
 			while (flail > 0 && MT && !MT.disposed)
-				MT.changeStatus("weakened", 2 SECONDS)
-				MT.canmove = 0
-				if (MT.loc)
-					holder.owner.set_loc(MT.loc)
+				MT.changeStatus("weakened", 0.7 SECONDS)
+				MT.canmove = 1
+				if (BOUNDS_DIST(holder.owner, target) > 0)
+					break
 				if (holder.owner.getStatusDuration("stunned") || holder.owner.getStatusDuration("weakened") || holder.owner.getStatusDuration("paralysis"))
 					break
 				if (istype(S))
@@ -156,7 +161,7 @@
 				return 1
 		if (target == holder.owner)
 			return 1
-		if (get_dist(holder.owner, target) > 1)
+		if (BOUNDS_DIST(holder.owner, target) > 0)
 			boutput(holder.owner, __red("That is too far away to drain."))
 			return 1
 		var/mob/living/carbon/human/H = target
@@ -167,8 +172,9 @@
 		holder.owner.visible_message("<span class='combat'><b>[holder.owner] starts draining the fluids out of [H]!</b></span>",\
 		"<span class='combat'><b>You start draining the fluids out of [H]!</b></span>")
 		playsound(holder.owner, "sound/misc/pourdrink.ogg", 50, 0, pitch = 0.7)
+		logTheThing("combat", S, null, "used their [src.name] ability on [H] at [log_loc(S)]")
 		disabled = 1
-		SPAWN_DBG(0)
+		SPAWN(0)
 			var/drain = rand(65, 75)
 			holder.owner.set_loc(H.loc)
 			holder.owner.canmove = 0
@@ -183,7 +189,7 @@
 			if (H && H.stat && holder.owner.loc == H.loc)
 				holder.owner.visible_message("<span class='combat'><b>[src] drains [H] dry!</b></span>",\
 				"<span class='combat'><b>You drain [H] dry!</b></span>")
-				H.death(0)
+				H.death(FALSE)
 				H.real_name = "Unknown"
 				if (H.bioHolder)
 					H.bioHolder.AddEffect("husk")
@@ -191,7 +197,7 @@
 				var/list/turf/neightbors = getNeighbors(get_turf(holder.owner), alldirs)
 				if(length(neightbors))
 					holder.owner.set_loc(pick(neightbors))
-				SPAWN_DBG(0)
+				SPAWN(0)
 					var/obj/icecube/cube = new /obj/icecube(get_turf(H), H)
 					H.set_loc(cube)
 					if (istype(S))
@@ -235,6 +241,7 @@
 	name = "Kick"
 	desc = "Kick a mob, doing a little damage and possibly causing a short stun."
 	cooldown = 100
+	icon_state = "clown_spider_kick"
 	targeted = 1
 	target_anything = 1
 	var/sound/sound_kick = 'sound/musical_instruments/Bikehorn_1.ogg'
@@ -253,7 +260,7 @@
 				return 1
 		if (target == holder.owner)
 			return 1
-		if (get_dist(holder.owner, target) > 1)
+		if (BOUNDS_DIST(holder.owner, target) > 0)
 			boutput(holder.owner, __red("That is too far away to kick."))
 			return 1
 		var/mob/MT = target
@@ -303,7 +310,7 @@
 				return 1
 		if (target == holder.owner)
 			return 1
-		if (get_dist(holder.owner, target) > 1)
+		if (BOUNDS_DIST(holder.owner, target) > 0)
 			boutput(holder.owner, __red("That is too far away to trample."))
 			return 1
 		var/mob/MT = target
@@ -314,7 +321,7 @@
 		if (!isdead(MT))
 			MT.emote("scream")
 		disabled = 1
-		SPAWN_DBG(0)
+		SPAWN(0)
 			var/flail = 8
 			holder.owner.canmove = 0
 			while (flail > 0 && MT && !MT.disposed)
@@ -325,7 +332,7 @@
 				MT.changeStatus("stunned", 1 SECOND)
 				if (holder.owner.getStatusDuration("stunned") || holder.owner.getStatusDuration("weakened") || holder.owner.getStatusDuration("paralysis"))
 					break
-				playsound(holder.owner, "sound/impact_sounds/flesh_break_1.ogg", 50, 1)
+				playsound(holder.owner, 'sound/impact_sounds/Flesh_Break_1.ogg', 50, 1)
 				playsound(holder.owner, src.sound_kick, 50, 1)
 				if (issilicon(MT))
 					var/mob/living/silicon/robot/R = MT

@@ -11,7 +11,7 @@
 		boutput(M, "<span class='alert'>It's just not good enough on its own...</span>")
 
 	afterattack(atom/target, mob/user, flag)
-		if (!src.reagents || src.qdeled || src.pooled) return //how
+		if (!src.reagents || src.qdeled || src.disposed) return //how
 
 		if (istype(target, /obj/item/reagent_containers/food/snacks/))
 			user.visible_message("<span class='notice'>[user] adds [src] to \the [target].</span>", "<span class='notice'>You add [src] to \the [target].</span>")
@@ -32,7 +32,6 @@
 	desc = "You probably shouldn't eat these."
 	icon_state = "ironfilings"
 	heal_amt = 0
-	amount = 1
 
 /obj/item/reagent_containers/food/snacks/condiment/ketchup
 	name = "ketchup"
@@ -46,10 +45,24 @@
 	desc = "Made with real artificial maple syrup!"
 	icon_state = "syrup"
 
+/obj/item/reagent_containers/food/snacks/condiment/soysauce
+	name = "soy sauce"
+	desc = "A dark brown sauce brewed from soybeans and wheat. Salty!"
+	icon_state = "soy-sauce"
+	initial_volume = 30
+	initial_reagents = "soysauce"
+
+	heal(var/mob/M)
+		. = ..()	
+		boutput(M, "<span class='alert'>FUCK, SALTY!</span>")
+		M.emote("scream")
+
 /obj/item/reagent_containers/food/snacks/condiment/mayo
 	name = "mayonnaise"
 	desc = "The subject of many a tiresome innuendo."
 	icon_state = "mayonnaise" //why the fuck was this icon state called cookie
+	initial_volume = 5
+	initial_reagents = "mayo"
 
 /obj/item/reagent_containers/food/snacks/condiment/hotsauce
 	name = "hot sauce"
@@ -90,14 +103,14 @@
 	desc = "A perennial favourite of clowns."
 	icon_state = "custard"
 	needspoon = 1
-	amount = 2
+	bites_left = 2
 	heal_amt = 3
 
 /obj/item/reagent_containers/food/snacks/condiment/chocchips
 	name = "chocolate chips"
 	desc = "Mmm! Little bits of chocolate! Or rabbit droppings. Either or."
 	icon_state = "chocchips"
-	amount = 5
+	bites_left = 5
 	heal_amt = 1
 	initial_volume = 10
 	initial_reagents = "chocolate"
@@ -113,7 +126,6 @@
 	name = "butt-er"
 	desc = "Fluffy and fragrant."
 	icon_state = "butters"
-	amount = 1
 	heal_amt = 3
 	initial_volume = 20
 
@@ -177,7 +189,7 @@
 						H.emote("sneeze")
 						src.shakes ++
 						for (var/i = 1, i <= 30, i++)
-							SPAWN_DBG(50*i)
+							SPAWN(50*i)
 								if (H && prob(20)) //Wire: Fix for Cannot execute null.emote().
 									H.emote("sneeze")
 						return
