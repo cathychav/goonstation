@@ -9783,7 +9783,7 @@
 "axb" = (
 /obj/disposalpipe/segment/mail/horizontal,
 /obj/machinery/space_heater,
-/turf/simulated/wall/auto/reinforced/supernorn,
+/turf/simulated/floor/plating,
 /turf/simulated/floor/plating/damaged2,
 /area/station/maintenance/north)
 "axc" = (
